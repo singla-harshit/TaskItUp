@@ -1,5 +1,5 @@
-import mongoose, { Schema } from "mongoose";
-
+const { Schema} =require("mongoose");
+const mongoose=require("mongoose");
 const noticeSchema=new Schema({
     team:[{type:Schema.Types.ObjectId,ref:"User"}],
     text:{type:String},

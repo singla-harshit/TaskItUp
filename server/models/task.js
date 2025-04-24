@@ -1,9 +1,10 @@
-import mongoose, { Schema } from "mongoose";
+const { Schema} =require("mongoose");
+const mongoose=require("mongoose");
 
 const taskSchema=new Schema({
     title:{type:String,required:true},
     date:{type:Date,default:new  Date()},
-    priority:{type:String,default:"normal",enum:["high","medium","normal","low"]},
+    priority:{type:String,default:"normal",enum:["HIGH","MEDIUM","NORMAL","low"]},
     stage:{type:String,default:"todo",enum:["todo","in progress","completed"]},
     activities:{
         type:{
@@ -31,7 +32,7 @@ const taskSchema=new Schema({
 
         }
     ],
-    assests:[String],
+    
     team:[{type:Schema.Types.ObjectId,ref:"User"}],
     isTrashed:{type:Boolean,default:false}
 },{timestamps:true});

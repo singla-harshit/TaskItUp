@@ -4,7 +4,7 @@ const cookieParser=require("cookie-parser");
 const jwt=require("jsonwebtoken");
 const morgan=require("morgan")
 const dotenv=require("dotenv");
-const dbConnection=require("./utils/index")
+const {dbConnection}=require("./utils/index")
 const {routeNotFound,errorHandler}=require("./middleware/errorMiddlewaves")
 dotenv.config();
 dbConnection();
