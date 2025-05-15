@@ -33,11 +33,12 @@ const duplicateTask = async (req, res) => {
     try {
         const { id } = req.params
         const task = await Task.findById(id);
+        console.log(task)
         const newTask = await Task.create({
             ...task,
             title: task.title + " - Duplicate"
         })
-        newTask.team = task.team;
+        // newTask.team = task.team;
         newTask.subTasks = task.subTasks;
         newTask.assets = task.assets;
         newTask.priority = task.priority;
@@ -45,16 +46,17 @@ const duplicateTask = async (req, res) => {
         await newTask.save();
         //alert for user
         let text = "New task has been assigned to you"
-        if (task.team.length > 1) {
-            text = text + `and ${task.team.length - 1} others`
-        }
+        // if (task.team.length > 1) {
+        //     text = text + `and ${task.team.length - 1} others`
+        // }
         text = text + `The task priority is set a ${task.priority} priority ,so check and act accordingly. The task date is ${task.date.toDateString}.
            Thank you!!`
         await Notice.create({
-            team, text, task: newTask._id
+             text, task: newTask._id
         })
         res.status(200).json({ status: true, message: "Duplicate Task created successfully" })
     } catch (error) {
+        console.log(error)
         return res.status(400).json({ status: false, message: "Invalid user data" })
     }
 }
@@ -137,24 +139,54 @@ const dashboardStatistics = async (req, res) => {
 }
 const getTasks = async (req, res) => {
     try {
-        const { stage, isTrashed } = req.query;
-        let query = { isTrashed: isTrashed ? true : false };
-        if (stage) {
-            query.stage = stage;
-        }
-        let queryRes = Task.find(query).populate({
-            path: "team",
-            select: "name title email"
-        }).sort({ _id: -1 })
-        const tasks = await queryRes;
-        res.status(200).json({
-            status: true,
-            tasks
+      const { userId, isAdmin } = req.user || {};
+      if (!userId && !isAdmin) {
+        return res.status(401).json({ status: false, message: "Unauthorized" });
+      }
+  
+      const { stage, isTrashed, search } = req.query;
+  
+      let query = { isTrashed: isTrashed === "true" };
+  
+      if (!isAdmin) {
+        query.team = { $all: [userId] };
+      }
+  
+      if (stage) {
+        query.stage = stage;
+      }
+  
+      if (search && search.trim() !== "") {
+        const searchQuery = {
+          $or: [
+            { title: { $regex: search, $options: "i" } },
+            { stage: { $regex: search, $options: "i" } },
+            { priority: { $regex: search, $options: "i" } },
+          ],
+        };
+        query = { ...query, ...searchQuery };
+      }
+  
+      const tasks = await Task.find(query)
+        .populate({
+          path: "team",
+          select: "name title email",
         })
+        .sort({ _id: -1 });
+  
+      res.status(200).json({
+        status: true,
+        tasks,
+      });
     } catch (error) {
-        return res.status(400).json({ status: false, message: "Invalid user data" })
+      console.error("Error in getTasks:", error);
+      res.status(500).json({
+        status: false,
+        message: "Internal server error",
+      });
     }
-}
+  };
+  
 const getTask = async (req, res) => {
     try {
         const { id } = req.params;
@@ -188,6 +220,7 @@ const createSubTask = async (req, res) => {
         await task.save();
         res.status(200).json({ status: true, message: "Subtask added successfully" })
     } catch (error) {
+        console.log(error)
         return res.status(400).json({ status: false, message: "Invalid user data" })
     }
 }
@@ -205,6 +238,8 @@ task.team=team
 await task.save();
 res.status(200).json({status:true,message:"Task updated"})
     } catch (error) {
+        console.log(error)
+
         return res.status(400).json({ status: false, message: "Invalid user data" })
     }
 }

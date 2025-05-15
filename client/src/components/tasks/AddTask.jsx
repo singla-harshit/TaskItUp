@@ -12,19 +12,27 @@ import {getStorage,ref,getDownloadURL,uploadBytesResumable} from "firebase/stora
 import {app} from '../../utils/firebase'
 import { useCreateTaskMutation, useUpdateTaskMutation } from "../../redux/slices/api/taskApiSlice";
 import { toast } from "sonner";
+import { dateFormatter } from "../../utils";
 const LISTS = ["TODO", "IN PROGRESS", "COMPLETED"];
 const PRIORIRY = ["HIGH", "MEDIUM", "NORMAL", "LOW"];
 
 const uploadedFileURLs = [];
 
 const AddTask = ({ open, setOpen,task }) => {
- 
+ const defaultValues={
+  title:"",
+  date:dateFormatter(task?.date||new Date()),
+  team:[],
+  stage:"",
+  priority:"",
+  assets:[],
+ }
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm();
+  } = useForm({defaultValues});
   const [team, setTeam] = useState(task?.team || []);
   const [stage, setStage] = useState(task?.stage?.toUpperCase() || LISTS[0]);
   const [priority, setPriority] = useState(
@@ -70,9 +78,36 @@ const AddTask = ({ open, setOpen,task }) => {
     }
   };
 
-  const handleSelect = (e) => {
-    setAssets(e.target.files);
+  const handleSelect = async (e) => {
+    const files = e.target.files;
+    const cloudName = 'dngcgyski'; // replace with your Cloudinary cloud name
+    const unsignedPreset = 'my_present';  // replace with your unsigned upload preset
+  
+    const uploadPromises = [];
+  
+    for (let i = 0; i < files.length; i++) {
+      const formData = new FormData();
+      formData.append('file', files[i]);
+      formData.append('upload_preset', unsignedPreset);
+  
+      const uploadPromise = fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, {
+        method: 'POST',
+        body: formData,
+      }).then(res => res.json());
+  
+      uploadPromises.push(uploadPromise);
+    }
+  
+    try {
+      const uploadedResponses = await Promise.all(uploadPromises);
+      uploadedResponses.forEach(file => {
+        console.log('Uploaded URL:', file.secure_url);
+      });
+    } catch (error) {
+      console.error('Upload failed:', error);
+    }
   };
+  
   const [createTask, { isLoading }] = useCreateTaskMutation();
   const [updateTask, { isLoading: isUpdating }] = useUpdateTaskMutation();
   const URLS = task?.assets ? [...task.assets] : [];

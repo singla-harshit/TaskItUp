@@ -1,10 +1,14 @@
 const express=require("express");
 const router=express.Router();
+const multer=require("multer")
+const storage=require("../config/storage");
 const {isAdminRoute,protectRoute}=require("../middleware/authMiddlewaves");
 const { registerUser, loginUser, logoutUser, getTeamList, getNotificationList, updateUserProfile, markNotificationRead, changeUserPassword, activateUserProfile, deleteUserProfile } = require("../controllers/userController");
 router.post('/register',registerUser);
 router.post('/login',loginUser);
 router.post('/logout',logoutUser);
+
+const upload=multer({storage});
 
 router.get('/get-team',protectRoute,isAdminRoute,getTeamList);
 router.get('/notifications',protectRoute,getNotificationList);
